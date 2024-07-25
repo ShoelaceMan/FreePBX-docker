@@ -1,0 +1,9 @@
+# FreePBX 17 changes - begin
+[ default_conf ] 
+ssl_conf = ssl_sect
+[ssl_sect]
+system_default = system_default_sect
+[system_default_sect]
+MinProtocol = TLSv1.2
+CipherString = DEFAULT:@SECLEVEL=1
+# FreePBX 17 changes - end
