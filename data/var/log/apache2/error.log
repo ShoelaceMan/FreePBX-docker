@@ -1,6 +1,0 @@
-[Thu Jul 25 16:25:05.194727 2024] [core:warn] [pid 23:tid 23] AH00098: pid file /var/run/apache2/apache2.pid overwritten -- Unclean shutdown of previous Apache run?
-[Thu Jul 25 16:25:05.205511 2024] [mpm_prefork:notice] [pid 23:tid 23] AH00163: Apache/2.4.61 (Debian) OpenSSL/3.0.13 configured -- resuming normal operations
-[Thu Jul 25 16:25:05.205555 2024] [core:notice] [pid 23:tid 23] AH00094: Command line: '/usr/sbin/apache2'
-[Thu Jul 25 16:27:41.385108 2024] [core:warn] [pid 23:tid 23] AH00098: pid file /var/run/apache2/apache2.pid overwritten -- Unclean shutdown of previous Apache run?
-[Thu Jul 25 16:27:41.389947 2024] [mpm_prefork:notice] [pid 23:tid 23] AH00163: Apache/2.4.61 (Debian) OpenSSL/3.0.13 configured -- resuming normal operations
-[Thu Jul 25 16:27:41.389975 2024] [core:notice] [pid 23:tid 23] AH00094: Command line: '/usr/sbin/apache2'
