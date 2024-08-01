@@ -6,4 +6,4 @@ docker build --build-arg NO_CACHE=$(date +%s) \
 	--build-arg AMPDBNAME='asterisk' \
 	--build-arg AMPDBENGINE='mysql' \
 	$@ \
-	-t stratustalk/freepbx:17.0 .
+	-t lacoursj/st-fpbx:latest .

@@ -170,11 +170,20 @@ COPY ./entrypoint.sh /entrypoint.sh
 RUN rm -rfv /etc/asterisk/
 RUN rm -rfv /var/log/asterisk
 RUN rm -rfv /var/log/apache2
+RUN rm -rfv /var/lib/asterisk/moh
+RUN rm -rfv /var/lib/asterisk/sounds/en/custom
+RUN rm -rfv /etc/ssl/asterisk
+RUN rm -rfv /etc/nftables.d
+RUN rm -rfv /var/spool/asterisk
 
 # Link to the run-time directories
 RUN ln -s /data/etc/asterisk /etc/asterisk
-RUN ln -s /data/var/log/asterisk /var/log/asterisk
 RUN ln -s /data/var/log/apache2 /var/log/apache2
+RUN ln -s /data/var/lib/asterisk/moh /var/lib/asterisk/moh
+RUN ln -s /data/var/lib/asterisk/sounds/en/custom /var/lib/asterisk/sounds/en/custom
+RUN ln -s /data/etc/ssl/asterisk /etc/ssl/asterisk
+RUN ln -s /data/etc/nftables.d /etc/nftables.d
+RUN ln -s /data/var/spool/asterisk /var/spool/asterisk
 
 # Clean up after ourselves
 RUN rm -fv /tmp/sng_freepbx_debian_install.sh && \
@@ -191,6 +200,7 @@ RUN rm -fv /tmp/sng_freepbx_debian_install.sh && \
     rm -rfv /var/log/dpkg.log && \
     rm -rfv /var/log/auth.log && \
     rm -rfv /var/log/apt && \
+    rm -rfv /var/cache/*/* && \
     rm -fv /tmp/systemctl.log && \
     rm -rfv /var/lib/apt/lists/* && \
     rm -rfv /usr/share/man/* && \
@@ -198,8 +208,12 @@ RUN rm -fv /tmp/sng_freepbx_debian_install.sh && \
 
 RUN apt-get -y clean && \
     apt-get remove -y wget systemd mariadb-client-core
+RUN apt-get autoremove -y
 RUN fwconsole stop --immediate --no-ansi || true
 RUN apachectl stop || true
+
+# "Mask" the systemctl binary
+RUN ln -s /usr/bin/true /usr/bin/systemctl
 
 # Add some build-time information
 RUN echo "$(date --utc "+%Y-%m-%dT%H:%M:%S%z")" >> /build-date
