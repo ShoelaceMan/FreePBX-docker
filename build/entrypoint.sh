@@ -17,8 +17,24 @@ exit_or_debug_on_error(){
 # Trap exits to use our function
 trap 'exit_or_debug_on_error' ERR
 
-# Print some information about our container 
+# Print some information about our container
 echo "$(fwconsole -V | awk -F' - ' '{print $2}') built at $(cat /build-date) with $(asterisk -V)"
+
+# Check to see if initialization is required
+if ! [ -f "/data/.no_init" ]; then
+    echo "Initializing /data..."
+    # Create the asterisk cdr database
+    mysql --user=root --password="${MYSQL_ROOT_PASSWORD}" -h "${AMPDBHOST}" -e "CREATE DATABASE asteriskcdrdb;"
+
+    # Grant access to the freepbxuser to the necessary databases
+    mysql --user=root --password="${MYSQL_ROOT_PASSWORD}" -h "${AMPDBHOST}" -e "GRANT ALL PRIVILEGES ON asterisk.* TO 'freepbxuser'@'%';"
+    mysql --user=root --password="${MYSQL_ROOT_PASSWORD}" -h "${AMPDBHOST}" -e "GRANT ALL PRIVILEGES ON asteriskcdrdb.* TO 'freepbxuser'@'%';"
+    mysql --user=root --password="${MYSQL_ROOT_PASSWORD}" -h "${AMPDBHOST}" -e "FLUSH PRIVILEGES;"
+
+    # Import the base SQL templates
+    mysql --user=root --password="${MYSQL_ROOT_PASSWORD}" -h "${AMPDBHOST}" < /data/asterisk.sql
+    mysql --user=root --password="${MYSQL_ROOT_PASSWORD}" -h "${AMPDBHOST}" < /data/asteriskcdrdb.sql
+fi
 
 # Enforce two arguments to be provided for the build process to function
 if [ -z "${AMPDBPASS}" ]; then echo "AMPDBPASS env var is required but not set"; exit 1; fi
@@ -57,15 +73,15 @@ if ! [ -d /data ]; then echo "/data persistent volume is required but does not e
  echo '#include manager_custom.conf') >> /etc/asterisk/manager.conf
 
 # Start apache
-echo "Running apache"
-if ! [ -d "/var/log/apache2" ]; then
+if [ ! -d "/var/log/apache2" ]; then
     echo "Creating apache2 log directory"
-    mkdir "/var/log/apache2"
+    mkdir -p "/var/log/apache2"
 fi
-if ! [ "$(stat -c '%U' "/var/log/apache2/")" == "asterisk" ]; then
+if [ ! "$(stat -c '%U' "/var/log/apache2/")" == "asterisk" ]; then
     echo "chowning apache2 log directory"
     chown -R asterisk: "/var/log/apache2"
 fi
+echo "Running apache"
 apachectl start
 
 # Start redis
@@ -77,15 +93,15 @@ echo "Creating socket"
 socat UNIX-LISTEN:/var/run/mysqld/mysqld.sock,fork TCP:${AMPDBHOST}:${AMPDBPORT} &
 
 # Start asterisk
-echo "Running asterisk"
-if ! [ -d "/var/log/asterisk" ]; then
+if [ ! -d "/var/log/asterisk" ]; then
     echo "Creating asterisk log directory"
-    mkdir "/var/log/asterisk"
+    mkdir -p "/var/log/asterisk"
 fi
-if ! [ "$(stat -c '%U' "/var/log/asterisk/")" == "asterisk" ]; then
+if [ ! "$(stat -c '%U' "/var/log/asterisk/")" == "asterisk" ]; then
     echo "chowning asterisk log directory"
     chown -R asterisk: "/var/log/asterisk"
 fi
+echo "Running asterisk"
 su - asterisk -c "/usr/sbin/asterisk -q -f -U asterisk -G asterisk -g -c" > /var/log/asterisk/asterisk.log 2>&1 &
 
 # Wait until the asterisk socket actually exists
