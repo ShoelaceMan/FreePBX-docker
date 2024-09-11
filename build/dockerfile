@@ -19,7 +19,7 @@ RUN add-apt-repository -y -S "deb [ arch=amd64 ] http://deb.freepbx.org/freepbx1
 # Add mongo repositories
 RUN wget -qO - https://pgp.mongodb.com/server-7.0.asc | gpg  --dearmor --yes -o /etc/apt/trusted.gpg.d/mongodb-server-7.0.gpg && \
     add-apt-repository -y -S "deb [ arch=amd64 ] http://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" && \
-    add-apt-repository -y -S "deb http://ftp.debian.org/debian/ stable main non-free non-free-firmware" && \
+    add-apt-repository -y -S "deb http://ftp.debian.org/debian/ stable main non-free non-free-firmware"
 
 # Configure apt priorities
 COPY ./99sangoma-fpbx-repository /etc/apt/preferences.d/99sangoma-fpbx-repository
@@ -158,14 +158,50 @@ RUN asterisk -f -U asterisk -G asterisk -vvvg -c & \
 # Installing default modules and refresh signatures
 RUN fwconsole ma install userman && \
     fwconsole ma installlocal && \
+    fwconsole ma remove callaccounting --force; true && \
+    fwconsole ma remove cdrpro --force; true && \
+    fwconsole ma remove pa --force; true && \
+    fwconsole ma remove conferencespro --force; true && \
+    fwconsole ma remove faxpro --force; true && \
+    fwconsole ma remove parkpro --force; true && \
+    fwconsole ma remove pinsetspro --force; true && \
+    fwconsole ma remove sangomaconnect --force; true && \
+    fwconsole ma remove sangomartapi --force; true && \
+    fwconsole ma remove sangomacrm --force; true && \
+    fwconsole ma remove webcallback; true && \
+    fwconsole ma remove vqplus; true && \
+    fwconsole ma remove vmnotify; true && \
+    fwconsole ma remove callerid; true && \
+    fwconsole ma remove broadcast; true && \
+    fwconsole ma remove pms; true && \
+    fwconsole ma remove cos; true && \
+    fwconsole ma remove areminder; true && \
+    fwconsole ma remove restapps; true && \
+    fwconsole ma remove endpoint; true && \
+    fwconsole ma remove voicemail_report; true && \
+    fwconsole ma remove recording_report; true && \
+    fwconsole ma remove qxact_reports; true && \
+    fwconsole ma remove pbxmfa; true && \
+    fwconsole ma remove queuestats; true && \
+    fwconsole ma remove calllimit; true && \
+    fwconsole ma remove extensionroutes; true && \
+    fwconsole ma remove sysadmin; true && \
     fwconsole ma upgradeall && \
     fwconsole ma refreshsignatures
 
 # Add custom files to the container
 COPY ./entrypoint.sh /entrypoint.sh
 
+# Add pbx_tools repo, and set it as the link to /usr/local/bin
+RUN wget -O /tmp/main.zip https://github.com/ShoelaceMan/pbx_tools/archive/refs/heads/main.zip && \
+    unzip /tmp/main.zip -d /root/bin && \
+    rm -f /tmp/main.zip && \
+    rm -rf /usr/local/bin && \
+    ln -s /root/bin /usr/local/bin
+
 # Finalize the installation before ending
 # TODO: Make this suck a lot less
+RUN rm -rf /var/www/html/*
 RUN curl 192.168.222.195/full_backup.tar.gz | tar -xz -C / || true
 
 # Remove build-time directories
@@ -179,38 +215,39 @@ RUN rm -rfv /etc/asterisk/ && \
     rm -rfv /var/spool/asterisk
 
 # Link to the run-time directories
-RUN ln -s /data/etc/asterisk /etc/asterisk && \
-    ln -s /data/var/lib/asterisk/moh /var/lib/asterisk/moh && \
-    ln -s /data/var/lib/asterisk/sounds/en/custom /var/lib/asterisk/sounds/en/custom && \
-    ln -s /data/etc/ssl/asterisk /etc/ssl/asterisk && \
-    ln -s /data/etc/nftables.d /etc/nftables.d && \
-    ln -s /data/var/spool/asterisk /var/spool/asterisk && \
-    ln -s /data/var/lib/asterisk/sounds/en/custom /var/lib/asterisk/sounds/en/custom
+RUN ln -fs /data/etc/asterisk /etc/asterisk && \
+    ln -fs /data/var/lib/asterisk/moh /var/lib/asterisk/moh && \
+    ln -fs /data/var/lib/asterisk/sounds/en/custom /var/lib/asterisk/sounds/en/custom && \
+    ln -fs /data/etc/ssl/asterisk /etc/ssl/asterisk && \
+    ln -fs /data/etc/nftables.d /etc/nftables.d && \
+    ln -fs /data/var/spool/asterisk /var/spool/asterisk && \
+    ln -fs /data/var/lib/asterisk/sounds/en/custom /var/lib/asterisk/sounds/en/custom
 
 # Clean up after ourselves
-#RUN rm -fv /tmp/sng_freepbx_debian_install.sh && \
-#    rm -rfv /var/log/README && \
-#    rm -rfv /var/log/fontconfig.log && \
-#    rm -rfv /var/log/journal && \
-#    rm -rfv /var/log/sysstat && \
-#    rm -rfv /var/log/wtmp && \
-#    rm -rfv /var/log/runit && \
-#    rm -rfv /var/log/private && \
-#    rm -rfv /var/log/lastlog && \
-#    rm -rfv /var/log/freepbx_rpm_install.log && \
-#    rm -rfv /var/log/faillog && \
-#    rm -rfv /var/log/dpkg.log && \
-#    rm -rfv /var/log/auth.log && \
-#    rm -rfv /var/log/apt && \
-#    rm -rfv /var/cache/*/* && \
-#    rm -fv /tmp/systemctl.log && \
-#    rm -rfv /var/lib/apt/lists/* && \
-#    rm -rfv /usr/share/man/* && \
-#    rm -fv /var/www/html/index.html
+RUN rm -fv /tmp/sng_freepbx_debian_install.sh && \
+    rm -rfv /var/log/README && \
+    rm -rfv /var/log/fontconfig.log && \
+    rm -rfv /var/log/journal && \
+    rm -rfv /var/log/sysstat && \
+    rm -rfv /var/log/wtmp && \
+    rm -rfv /var/log/runit && \
+    rm -rfv /var/log/private && \
+    rm -rfv /var/log/lastlog && \
+    rm -rfv /var/log/freepbx_rpm_install.log && \
+    rm -rfv /var/log/faillog && \
+    rm -rfv /var/log/dpkg.log && \
+    rm -rfv /var/log/auth.log && \
+    rm -rfv /var/log/apt && \
+    rm -rfv /var/cache/*/* && \
+    rm -fv /tmp/systemctl.log && \
+    rm -rfv /var/lib/apt/lists/* && \
+    rm -rfv /usr/share/man/* && \
+    rm -fv /var/www/html/index.html
 
 #RUN apt-get -y clean && \
-#    apt-get remove -y wget systemd mariadb-client-core
-#RUN apt-get autoremove -y
+#    apt-get remove -y wget systemd mariadb-client-core && \
+#    apt-get autoremove -y
+
 RUN fwconsole stop --immediate --no-ansi || true ; \
     apachectl stop || true
 

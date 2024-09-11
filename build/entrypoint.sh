@@ -88,6 +88,10 @@ apachectl start
 echo "Running redis"
 su - redis -s /bin/bash -c "/usr/bin/redis-server --bind 127.0.0.1 --port 6379" &
 
+# Start postfix
+echo "Starting postfix"
+postfix start
+
 # Create the mysql forwarding socket
 echo "Creating socket"
 socat UNIX-LISTEN:/var/run/mysqld/mysqld.sock,fork TCP:${AMPDBHOST}:${AMPDBPORT} &
@@ -102,7 +106,7 @@ if [ ! "$(stat -c '%U' "/var/log/asterisk/")" == "asterisk" ]; then
     chown -R asterisk: "/var/log/asterisk"
 fi
 echo "Running asterisk"
-su - asterisk -c "/usr/sbin/asterisk -q -f -U asterisk -G asterisk -g -c" > /var/log/asterisk/asterisk.log 2>&1 &
+su - asterisk -c "/usr/sbin/asterisk -q -f -U asterisk -G asterisk -g" > /var/log/asterisk/asterisk.log 2>&1 &
 
 # Wait until the asterisk socket actually exists
 echo "Waiting for asterisk to be ready"
